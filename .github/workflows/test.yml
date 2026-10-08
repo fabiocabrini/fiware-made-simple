@@ -1,0 +1,37 @@
+# Starts the platform on a GitHub x86_64 server and runs the end-to-end tests
+# on every push, pull request, or manual run.
+name: Platform test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  platform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check requirements
+        run: |
+          cp .env.example .env
+          ./scripts/check-requirements.sh
+
+      - name: Start the platform
+        run: docker compose up -d --wait --wait-timeout 300
+
+      - name: End-to-end test
+        run: ./scripts/smoke-test.sh
+
+      - name: Postman collection (Newman)
+        run: >
+          docker run --rm --network host -v "$PWD/postman:/etc/newman" postman/newman:6-alpine
+          run "FIWARE Made Simple.postman_collection.json" --delay-request 300
+
+      - name: State and logs on failure
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --tail 100

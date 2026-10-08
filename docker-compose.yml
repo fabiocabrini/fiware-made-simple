@@ -1,0 +1,197 @@
+# FIWARE Made Simple
+#
+#   docker compose up -d --wait   starts the platform and waits until every service is healthy
+#   docker compose ps             shows the state of the services
+#   docker compose down           stops the platform (data is kept in the volumes)
+#
+# Before the first run: cp .env.example .env  (and change the passwords)
+# Documentation: docs/03-installation.md
+
+name: fiware
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Context MongoDB: used by Orion (current state of the entities,
+  # subscriptions, registrations) and by the IoT Agent (service groups, devices).
+  # No password and no published port: reachable only from the internal network.
+  # ---------------------------------------------------------------------------
+  mongo-db:
+    image: mongo:${MONGO_VERSION:?.env file missing or incomplete - run cp .env.example .env}
+    container_name: fiware-mongo-db
+    restart: unless-stopped
+    # 256 MB cache (the default is half of the RAM): lets the platform run on small machines
+    command: ["--wiredTigerCacheSizeGB", "0.25"]
+    volumes:
+      - mongo-db-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    logging: *logging
+
+  # ---------------------------------------------------------------------------
+  # Historical MongoDB: dedicated to STH-Comet (sth_<fiware-service> databases).
+  # Authentication enabled and port published for external access (Compass, Python...).
+  # Users are created on the first start by config/mongo-sth/init-users.js
+  # ---------------------------------------------------------------------------
+  mongo-db-sth:
+    image: mongo:${MONGO_VERSION:?.env file missing or incomplete - run cp .env.example .env}
+    container_name: fiware-mongo-db-sth
+    restart: unless-stopped
+    command: ["--auth", "--wiredTigerCacheSizeGB", "0.25"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${STH_MONGO_ROOT_USER:?.env file missing or incomplete - run cp .env.example .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${STH_MONGO_ROOT_PASSWORD:?.env file missing or incomplete - run cp .env.example .env}
+      STH_MONGO_USER: ${STH_MONGO_USER:?.env file missing or incomplete - run cp .env.example .env}
+      STH_MONGO_PASSWORD: ${STH_MONGO_PASSWORD:?.env file missing or incomplete - run cp .env.example .env}
+      STH_MONGO_READER_USER: ${STH_MONGO_READER_USER:?.env file missing or incomplete - run cp .env.example .env}
+      STH_MONGO_READER_PASSWORD: ${STH_MONGO_READER_PASSWORD:?.env file missing or incomplete - run cp .env.example .env}
+    ports:
+      - "${STH_MONGO_BIND:-0.0.0.0}:27017:27017"
+    volumes:
+      - mongo-db-sth-data:/data/db
+      - ./config/mongo-sth/init-users.js:/docker-entrypoint-initdb.d/init-users.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    logging: *logging
+
+  # ---------------------------------------------------------------------------
+  # Orion Context Broker (NGSI-v2): stores the CURRENT state of the entities.
+  # ---------------------------------------------------------------------------
+  orion:
+    image: fiware/orion:${ORION_VERSION:?.env file missing or incomplete - run cp .env.example .env}
+    container_name: fiware-orion
+    restart: unless-stopped
+    depends_on:
+      mongo-db:
+        condition: service_healthy
+    ports:
+      - "1026:1026"
+    command: >
+      -dbURI mongodb://mongo-db:27017
+      -logLevel ${ORION_LOG_LEVEL:-INFO}
+      -corsOrigin __ALL
+      -corsMaxAge 600
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "-s", "http://localhost:1026/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    logging: *logging
+
+  # ---------------------------------------------------------------------------
+  # Eclipse Mosquitto: MQTT broker between the devices and the IoT Agent.
+  # ---------------------------------------------------------------------------
+  mosquitto:
+    image: eclipse-mosquitto:${MOSQUITTO_VERSION:?.env file missing or incomplete - run cp .env.example .env}
+    container_name: fiware-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"   # MQTT
+      - "9001:9001"   # MQTT over WebSockets
+    volumes:
+      - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/broker/version", "-C", "1", "-W", "3", "-i", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  # ---------------------------------------------------------------------------
+  # IoT Agent UltraLight 2.0: translates device MQTT/HTTP messages into NGSI-v2
+  # and forwards Orion commands to the devices.
+  # ---------------------------------------------------------------------------
+  iot-agent:
+    image: fiware/iotagent-ul:${IOTA_UL_VERSION:?.env file missing or incomplete - run cp .env.example .env}
+    container_name: fiware-iot-agent
+    restart: unless-stopped
+    depends_on:
+      mongo-db:
+        condition: service_healthy
+      orion:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+    ports:
+      - "4041:4041"   # Provisioning API (northbound)
+      - "7896:7896"   # UltraLight measurements over HTTP (southbound)
+    environment:
+      IOTA_CB_HOST: orion
+      IOTA_CB_PORT: 1026
+      IOTA_CB_NGSI_VERSION: v2
+      IOTA_NORTH_PORT: 4041
+      IOTA_PROVIDER_URL: http://iot-agent:4041
+      IOTA_REGISTRY_TYPE: mongodb
+      IOTA_MONGO_HOST: mongo-db
+      IOTA_MONGO_PORT: 27017
+      IOTA_MONGO_DB: iotagentul
+      IOTA_HTTP_PORT: 7896
+      IOTA_DEFAULT_RESOURCE: /iot/d
+      # The IoT Agent default apikey is "TEF": messages using it are matched to a
+      # device by device_id alone, in ANY fiware-service. Since "TEF" is the apikey
+      # used in the examples, the default key is replaced by a value nobody uses.
+      IOTA_DEFAULT_KEY: default-key-disabled
+      IOTA_MQTT_HOST: mosquitto
+      IOTA_MQTT_PORT: 1883
+      IOTA_AMQP_DISABLED: "true"
+      IOTA_TIMESTAMP: "true"
+      IOTA_AUTOCAST: "true"
+      IOTA_LOG_LEVEL: ${IOTA_LOG_LEVEL:-INFO}
+    logging: *logging
+
+  # ---------------------------------------------------------------------------
+  # STH-Comet: receives notifications from Orion (subscription) and stores the
+  # measurement history in mongo-db-sth.
+  # NOTE: STH-Comet only understands NGSIv1 notifications, and Orion 4.x removed
+  # "attrsFormat": "legacy". The subscription must use "httpCustom" to build the
+  # NGSIv1 payload and point to the internal URL http://sth-comet:8666/notify
+  # (see docs/06-historical-data.md and step 2.6 of the Postman collection).
+  # ---------------------------------------------------------------------------
+  sth-comet:
+    image: telefonicaiot/fiware-sth-comet:${STH_VERSION:?.env file missing or incomplete - run cp .env.example .env}
+    container_name: fiware-sth-comet
+    restart: unless-stopped
+    depends_on:
+      mongo-db-sth:
+        condition: service_healthy
+    ports:
+      - "8666:8666"
+    environment:
+      STH_HOST: 0.0.0.0
+      STH_PORT: 8666
+      DB_PREFIX: sth_
+      DB_URI: mongo-db-sth:27017
+      DB_USERNAME: ${STH_MONGO_USER:-}
+      DB_PASSWORD: ${STH_MONGO_PASSWORD:-}
+      DB_AUTH_SOURCE: admin
+      LOGOPS_LEVEL: ${STH_LOG_LEVEL:-INFO}
+      # Deletes raw values older than N seconds (0 = never delete)
+      TRUNCATION_EXPIRE_AFTER_SECONDS: ${STH_EXPIRE_AFTER_SECONDS:-0}
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8666/version', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    logging: *logging
+
+volumes:
+  mongo-db-data:
+  mongo-db-sth-data:
+  mosquitto-data:

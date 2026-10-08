@@ -1,0 +1,4 @@
+# Normalize line endings: scripts with CRLF break on Linux/WSL
+* text=auto eol=lf
+*.png binary
+*.jpg binary

@@ -1,0 +1,5 @@
+dash>=2.16
+plotly>=5.20
+requests>=2.31
+matplotlib>=3.8
+tzdata>=2024.1   # time zone database (required on Windows)

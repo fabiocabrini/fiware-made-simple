@@ -1,0 +1,10 @@
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Operating system
+.DS_Store
+Thumbs.db

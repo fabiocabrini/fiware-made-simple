@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use FIWARE Made Simple in academic work, please cite it as below."
+title: "FIWARE Made Simple"
+abstract: "A simplified, Docker-based FIWARE platform for teaching, research, and proofs of concept in the Internet of Things."
+type: software
+authors:
+  - family-names: Cabrini
+    given-names: Fábio Henrique
+version: 2.0.0
+license: MIT
+repository-code: "https://github.com/fabiocabrini/fiware-made-simple"
+keywords:
+  - FIWARE
+  - IoT
+  - NGSI-v2
+  - Orion Context Broker
+  - Docker
+  - education
