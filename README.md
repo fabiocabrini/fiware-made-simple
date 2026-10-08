@@ -39,7 +39,7 @@ Orion Context Broker · IoT Agent UltraLight · STH-Comet · Mosquitto · MongoD
 
 | | Minimum | Recommended |
 |---|---|---|
-| **Operating system** | x86_64 Linux, Windows 10/11 with WSL 2, or macOS | Ubuntu Server 24.04 or 22.04 LTS |
+| **Operating system** | x86_64 Linux, Windows 10/11 with WSL 2, or macOS | Ubuntu Server 26.04 LTS |
 | **Processor** | 1 x86_64 core with AVX | 2 cores |
 | **Memory** | 1 GB, with swap | 2 GB (4 GB for classrooms) |
 | **Free disk space** | 5 GB | 20 GB |

@@ -37,13 +37,17 @@ To limit growth, adjust the device publishing rate or enable [automatic history 
 
 | System | Status | How |
 |---|---|---|
-| **Ubuntu Server 24.04 or 22.04 LTS** (x86_64) | ✅ Recommended | [Docker Engine](#linux-ubuntu-debian-and-derivatives) |
+| **Ubuntu Server 26.04 LTS** (x86_64) | ✅ Recommended | [Docker Engine](#linux-ubuntu-debian-and-derivatives) |
+| Ubuntu Server 18.04 to 24.04 LTS (x86_64) | ✅ Supported | [Docker Engine](#linux-ubuntu-debian-and-derivatives) |
 | Debian 12 and other x86_64 Linux distributions | ✅ Supported | [Docker Engine](#linux-ubuntu-debian-and-derivatives) |
 | Windows 10 or 11 (64-bit) | ✅ Supported | [Docker Desktop with WSL 2](#windows) |
 | macOS on Intel | ✅ Supported | [Docker Desktop or Colima](#macos) |
 | macOS on Apple Silicon (M1 to M4) | ✅ Supported, through x86_64 emulation | [Docker Desktop or Colima with Rosetta](#macos) |
 | Linux on **ARM** processors: Raspberry Pi, AWS Graviton (`t4g`, `m7g`...), Oracle Ampere A1 | ❌ Not supported | The FIWARE images are published for x86_64 only |
 | 32-bit systems | ❌ Not supported | |
+
+> [!NOTE]
+> Ubuntu 18.04 and 20.04 are past their standard support period, so prefer a current LTS release for new installations. On them, the system Python (3.6 and 3.8) is older than the 3.9 required by the [Python examples](../examples/); the platform itself is not affected.
 
 ### Software
 
@@ -76,7 +80,7 @@ The script changes nothing. It checks the operating system, architecture, AVX, m
 
 ```
 System
-  ✅ Linux: Ubuntu 24.04.1 LTS
+  ✅ Linux: Ubuntu 26.04 LTS
   ✅ x86_64 architecture
   ✅ CPU with AVX instructions (required by MongoDB 5+)
   ...
@@ -230,7 +234,7 @@ docker compose pull && docker compose up -d --wait
 
 ## Cloud installation
 
-The process is the same on a VM from any provider. Choose an **Ubuntu Server LTS** image on an **x86_64** instance with at least 2 GB of memory. Examples:
+The process is the same on a VM from any provider. Choose an **Ubuntu Server LTS** image (26.04 recommended) on an **x86_64** instance with at least 2 GB of memory. Examples:
 
 | Provider | Instance | vCPU / memory |
 |---|---|---|
