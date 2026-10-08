@@ -74,46 +74,48 @@ Checks that the platform components are up. Run it before you start.
 ])
 
 # ---------------------------------------------------------------------------
-sensor = "urn:ngsi-ld:Sensor:001"
-orion = folder("1. Orion Context Broker (NGSI-v2)", f"""
-Basic operations on entities directly in Orion, with no physical device.
+DEMO = "{{demo_entity_id}}"
+orion = folder("1. Orion Context Broker (NGSI-v2)", """
+Basic NGSI-v2 operations directly in Orion, using a **second Smart Lamp** (`{{demo_entity_id}}`) created by an application, with no device or IoT Agent involved.
+
+Compare it with the Smart Lamp of folder 2 (`{{entity_id}}`): both are entities of type `Lamp` with `luminosity` and `state`, but the one in folder 2 is kept up to date by the IoT Agent from the device's MQTT messages. For Orion, both are just entities.
 
 Orion stores only the **current state** of each entity. The history lives in STH-Comet (folder 5).
 
 Every request uses the `fiware-service` header (tenant, which becomes the `orion-<service>` database in MongoDB) and the `fiware-servicepath` header (a subdivision inside the tenant).
 """, [
-    req("1.1 Create entity", "POST", ORION + "/v2/entities",
-        f"""Creates the entity `{sensor}` of type `Sensor` with the `temperature` and `humidity` attributes.
+    req("1.1 Create a Smart Lamp entity", "POST", ORION + "/v2/entities",
+        """Creates the entity `{{demo_entity_id}}` of type `{{entity_type}}` with the same attributes as the Smart Lamp: `luminosity` and `state`.
 
-In NGSI-v2 every attribute has a `type` and a `value`. Use the `Number` type for numbers.""",
+In NGSI-v2 every attribute has a `type` and a `value`. The types follow the Smart Lamp provisioning (step 2.3): `Integer` for `luminosity` and `Text` for `state`.""",
         headers=JSON_CT + FW,
-        body={"id": sensor, "type": "Sensor",
-              "temperature": {"type": "Number", "value": 23.5},
-              "humidity": {"type": "Number", "value": 60}},
+        body={"id": DEMO, "type": "{{entity_type}}",
+              "luminosity": {"type": "Integer", "value": 30},
+              "state": {"type": "Text", "value": "off"}},
         tests=[status(201)]),
     req("1.2 List entities", "GET", ORION + "/v2/entities",
-        "Lists all the entities of the given `fiware-service` (20 by default; use `?limit=` and `?offset=` to paginate).",
+        "Lists all the entities of the given `fiware-service` (20 by default; use `?limit=` and `?offset=` to paginate). If you have already provisioned the Smart Lamp, both lamps show up.",
         headers=FW, tests=[status(200)]),
-    req("1.3 Get entity (keyValues)", "GET", ORION + f"/v2/entities/{sensor}?options=keyValues",
+    req("1.3 Get entity (keyValues)", "GET", ORION + "/v2/entities/" + DEMO + "?options=keyValues",
         "Returns the entity in the simplified `keyValues` format (name: value only), which is easier to consume in applications.",
         headers=FW,
-        tests=[status(200), 'pm.test("temperature present", () => pm.expect(pm.response.json()).to.have.property("temperature"));']),
-    req("1.4 Update attributes (PATCH)", "PATCH", ORION + f"/v2/entities/{sensor}/attrs",
-        "Updates **existing** attributes. PATCH fails if an attribute does not exist; to add new attributes, use `POST /attrs`.",
+        tests=[status(200), 'pm.test("luminosity present", () => pm.expect(pm.response.json()).to.have.property("luminosity"));']),
+    req("1.4 Update attributes (PATCH)", "PATCH", ORION + "/v2/entities/" + DEMO + "/attrs",
+        "Updates **existing** attributes: turns the lamp on and changes the luminosity. PATCH fails if an attribute does not exist; to add new attributes, use `POST /attrs`.",
         headers=JSON_CT + FW,
-        body={"temperature": {"type": "Number", "value": 35},
-              "humidity": {"type": "Number", "value": 40}},
+        body={"luminosity": {"type": "Integer", "value": 60},
+              "state": {"type": "Text", "value": "on"}},
         tests=[status(204)]),
-    req("1.5 Update a single attribute value", "PUT", ORION + f"/v2/entities/{sensor}/attrs/temperature/value",
-        "Replaces only the value of `temperature`. The body is the raw value, sent with `Content-Type: text/plain`.",
+    req("1.5 Update a single attribute value", "PUT", ORION + "/v2/entities/" + DEMO + "/attrs/luminosity/value",
+        "Replaces only the value of `luminosity`, keeping its type. The body is the raw value, sent with `Content-Type: text/plain`.",
         headers=[{"key": "Content-Type", "value": "text/plain"}] + FW,
-        body="38", raw_type="text", tests=[status(204)]),
-    req("1.6 Filter entities (q)", "GET", ORION + "/v2/entities?type=Sensor&q=temperature>30&options=keyValues",
-        "Filtered query: entities of type `Sensor` with `temperature` greater than 30. Other operators: `==`, `!=`, `<`, `<=`, `>=`, `..` (range), and `;` (logical AND).",
+        body="75", raw_type="text", tests=[status(204)]),
+    req("1.6 Filter entities (q)", "GET", ORION + "/v2/entities?type={{entity_type}}&q=luminosity>50;state==on&options=keyValues",
+        "Filtered query: lamps with `luminosity` greater than 50 **and** (`;`) `state` equal to `on`. Other operators: `==`, `!=`, `<`, `<=`, `>=`, and `..` (range, for example `luminosity==20..80`).",
         headers=FW,
-        tests=[status(200), 'pm.test("filter returned the entity", () => pm.expect(pm.response.json().length).to.be.above(0));']),
-    req("1.7 Delete entity", "DELETE", ORION + f"/v2/entities/{sensor}",
-        "Deletes the sample entity.", headers=FW, tests=[status(204)]),
+        tests=[status(200), 'pm.test("filter returned the lamp", () => pm.expect(pm.response.json().map(e => e.id)).to.include(pm.variables.get("demo_entity_id")));']),
+    req("1.7 Delete entity", "DELETE", ORION + "/v2/entities/" + DEMO,
+        "Deletes the second lamp. The Smart Lamp of folder 2 (`{{entity_id}}`) is not affected.", headers=FW, tests=[status(204)]),
 ])
 
 # ---------------------------------------------------------------------------
@@ -334,6 +336,7 @@ Tested with Orion 4.5.0, IoT Agent UltraLight 3.7.0, and STH-Comet 2.11.0.""",
         {"key": "device_id", "value": "lamp001", "description": "Device identifier in the IoT Agent and in the MQTT topics"},
         {"key": "entity_id", "value": "urn:ngsi-ld:Lamp:001", "description": "Entity id in Orion"},
         {"key": "entity_type", "value": "Lamp", "description": "Entity type in Orion"},
+        {"key": "demo_entity_id", "value": "urn:ngsi-ld:Lamp:002", "description": "Second lamp, created directly in Orion in folder 1"},
         {"key": "sth_notify_url", "value": "http://sth-comet:8666/notify", "description": "INTERNAL URL (Docker network) used by Orion to notify STH-Comet"},
         {"key": "lastN", "value": "30", "description": "Number of values returned by the history (maximum 100)"},
         {"key": "subscription_id", "value": "", "description": "Filled in automatically in 2.6"},

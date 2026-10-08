@@ -30,6 +30,7 @@ Open the collection, go to the **Variables** tab, and set at least `url`:
 | `device_id` | `lamp001` | Device identifier |
 | `entity_id` | `urn:ngsi-ld:Lamp:001` | Entity id in Orion |
 | `entity_type` | `Lamp` | Entity type |
+| `demo_entity_id` | `urn:ngsi-ld:Lamp:002` | Second lamp, created directly in Orion in folder 1, without a device |
 | `sth_notify_url` | `http://sth-comet:8666/notify` | **Internal** URL that Orion uses to notify STH-Comet. Do not change it |
 | `lastN` | `30` | Number of values returned by the history (maximum 100) |
 | `subscription_id` | *(automatic)* | Filled in when the subscription is created |
@@ -39,7 +40,7 @@ Open the collection, go to the **Variables** tab, and set at least `url`:
 | Folder | Run it | Goal |
 |---|---|---|
 | **0. Health Check** | Every time you start | Confirm that Orion, the IoT Agent, and STH-Comet are up |
-| **1. Orion Context Broker** | Optional | Practice NGSI-v2: create, query, filter, update, and delete an entity |
+| **1. Orion Context Broker** | Optional | Practice NGSI-v2 with a second lamp: create, query, filter, update, and delete an entity |
 | **2. Provisioning** | **Only once** | Create the service group, provision the Smart Lamp, and create the history subscription |
 | **3. Simulate the device** | As often as you like | Send random measurements over HTTP, as if it were the ESP32 |
 | **4. Commands** | As often as you like | Turn the lamp on and off and follow the execution status |

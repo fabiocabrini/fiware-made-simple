@@ -75,10 +75,10 @@
     },
     {
       "name": "1. Orion Context Broker (NGSI-v2)",
-      "description": "Basic operations on entities directly in Orion, with no physical device.\n\nOrion stores only the **current state** of each entity. The history lives in STH-Comet (folder 5).\n\nEvery request uses the `fiware-service` header (tenant, which becomes the `orion-<service>` database in MongoDB) and the `fiware-servicepath` header (a subdivision inside the tenant).",
+      "description": "Basic NGSI-v2 operations directly in Orion, using a **second Smart Lamp** (`{{demo_entity_id}}`) created by an application, with no device or IoT Agent involved.\n\nCompare it with the Smart Lamp of folder 2 (`{{entity_id}}`): both are entities of type `Lamp` with `luminosity` and `state`, but the one in folder 2 is kept up to date by the IoT Agent from the device's MQTT messages. For Orion, both are just entities.\n\nOrion stores only the **current state** of each entity. The history lives in STH-Comet (folder 5).\n\nEvery request uses the `fiware-service` header (tenant, which becomes the `orion-<service>` database in MongoDB) and the `fiware-servicepath` header (a subdivision inside the tenant).",
       "item": [
         {
-          "name": "1.1 Create entity",
+          "name": "1.1 Create a Smart Lamp entity",
           "request": {
             "method": "POST",
             "header": [
@@ -96,10 +96,10 @@
               }
             ],
             "url": "http://{{url}}:1026/v2/entities",
-            "description": "Creates the entity `urn:ngsi-ld:Sensor:001` of type `Sensor` with the `temperature` and `humidity` attributes.\n\nIn NGSI-v2 every attribute has a `type` and a `value`. Use the `Number` type for numbers.",
+            "description": "Creates the entity `{{demo_entity_id}}` of type `{{entity_type}}` with the same attributes as the Smart Lamp: `luminosity` and `state`.\n\nIn NGSI-v2 every attribute has a `type` and a `value`. The types follow the Smart Lamp provisioning (step 2.3): `Integer` for `luminosity` and `Text` for `state`.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"urn:ngsi-ld:Sensor:001\",\n  \"type\": \"Sensor\",\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 23.5\n  },\n  \"humidity\": {\n    \"type\": \"Number\",\n    \"value\": 60\n  }\n}",
+              "raw": "{\n  \"id\": \"{{demo_entity_id}}\",\n  \"type\": \"{{entity_type}}\",\n  \"luminosity\": {\n    \"type\": \"Integer\",\n    \"value\": 30\n  },\n  \"state\": {\n    \"type\": \"Text\",\n    \"value\": \"off\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -134,7 +134,7 @@
               }
             ],
             "url": "http://{{url}}:1026/v2/entities",
-            "description": "Lists all the entities of the given `fiware-service` (20 by default; use `?limit=` and `?offset=` to paginate)."
+            "description": "Lists all the entities of the given `fiware-service` (20 by default; use `?limit=` and `?offset=` to paginate). If you have already provisioned the Smart Lamp, both lamps show up."
           },
           "event": [
             {
@@ -162,7 +162,7 @@
                 "value": "{{servicepath}}"
               }
             ],
-            "url": "http://{{url}}:1026/v2/entities/urn:ngsi-ld:Sensor:001?options=keyValues",
+            "url": "http://{{url}}:1026/v2/entities/{{demo_entity_id}}?options=keyValues",
             "description": "Returns the entity in the simplified `keyValues` format (name: value only), which is easier to consume in applications."
           },
           "event": [
@@ -172,7 +172,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"temperature present\", () => pm.expect(pm.response.json()).to.have.property(\"temperature\"));"
+                  "pm.test(\"luminosity present\", () => pm.expect(pm.response.json()).to.have.property(\"luminosity\"));"
                 ]
               }
             }
@@ -196,11 +196,11 @@
                 "value": "{{servicepath}}"
               }
             ],
-            "url": "http://{{url}}:1026/v2/entities/urn:ngsi-ld:Sensor:001/attrs",
-            "description": "Updates **existing** attributes. PATCH fails if an attribute does not exist; to add new attributes, use `POST /attrs`.",
+            "url": "http://{{url}}:1026/v2/entities/{{demo_entity_id}}/attrs",
+            "description": "Updates **existing** attributes: turns the lamp on and changes the luminosity. PATCH fails if an attribute does not exist; to add new attributes, use `POST /attrs`.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 35\n  },\n  \"humidity\": {\n    \"type\": \"Number\",\n    \"value\": 40\n  }\n}",
+              "raw": "{\n  \"luminosity\": {\n    \"type\": \"Integer\",\n    \"value\": 60\n  },\n  \"state\": {\n    \"type\": \"Text\",\n    \"value\": \"on\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -238,11 +238,11 @@
                 "value": "{{servicepath}}"
               }
             ],
-            "url": "http://{{url}}:1026/v2/entities/urn:ngsi-ld:Sensor:001/attrs/temperature/value",
-            "description": "Replaces only the value of `temperature`. The body is the raw value, sent with `Content-Type: text/plain`.",
+            "url": "http://{{url}}:1026/v2/entities/{{demo_entity_id}}/attrs/luminosity/value",
+            "description": "Replaces only the value of `luminosity`, keeping its type. The body is the raw value, sent with `Content-Type: text/plain`.",
             "body": {
               "mode": "raw",
-              "raw": "38",
+              "raw": "75",
               "options": {
                 "raw": {
                   "language": "text"
@@ -276,8 +276,8 @@
                 "value": "{{servicepath}}"
               }
             ],
-            "url": "http://{{url}}:1026/v2/entities?type=Sensor&q=temperature>30&options=keyValues",
-            "description": "Filtered query: entities of type `Sensor` with `temperature` greater than 30. Other operators: `==`, `!=`, `<`, `<=`, `>=`, `..` (range), and `;` (logical AND)."
+            "url": "http://{{url}}:1026/v2/entities?type={{entity_type}}&q=luminosity>50;state==on&options=keyValues",
+            "description": "Filtered query: lamps with `luminosity` greater than 50 **and** (`;`) `state` equal to `on`. Other operators: `==`, `!=`, `<`, `<=`, `>=`, and `..` (range, for example `luminosity==20..80`)."
           },
           "event": [
             {
@@ -286,7 +286,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"filter returned the entity\", () => pm.expect(pm.response.json().length).to.be.above(0));"
+                  "pm.test(\"filter returned the lamp\", () => pm.expect(pm.response.json().map(e => e.id)).to.include(pm.variables.get(\"demo_entity_id\")));"
                 ]
               }
             }
@@ -306,8 +306,8 @@
                 "value": "{{servicepath}}"
               }
             ],
-            "url": "http://{{url}}:1026/v2/entities/urn:ngsi-ld:Sensor:001",
-            "description": "Deletes the sample entity."
+            "url": "http://{{url}}:1026/v2/entities/{{demo_entity_id}}",
+            "description": "Deletes the second lamp. The Smart Lamp of folder 2 (`{{entity_id}}`) is not affected."
           },
           "event": [
             {
@@ -1105,6 +1105,11 @@
       "key": "entity_type",
       "value": "Lamp",
       "description": "Entity type in Orion"
+    },
+    {
+      "key": "demo_entity_id",
+      "value": "urn:ngsi-ld:Lamp:002",
+      "description": "Second lamp, created directly in Orion in folder 1"
     },
     {
       "key": "sth_notify_url",
