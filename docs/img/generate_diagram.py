@@ -218,7 +218,7 @@ arrow([(mx1, MOS_T), (mx1, IOTA_B + 4)], C["tel"], "mqtt")
 badge(mx1, (MOS_T + IOTA_B) / 2, "2", C["tel"])
 arrow([(mx2, IOTA_B), (mx2, MOS_T - 4)], C["cmd"], "mqtt")
 badge(mx2, (MOS_T + IOTA_B) / 2, "C", C["cmd"])
-# ESP32 <-> Mosquitto (MQTT)
+# IoT device <-> Mosquitto (MQTT)
 arrow([(mx1, ESP_T), (mx1, MOS_B + 4)], C["tel"], "mqtt")
 badge(mx1, (ESP_T + MOS_B) / 2 - 2, "1", C["tel"])
 arrow([(mx2, MOS_B), (mx2, ESP_T - 4)], C["cmd"], "mqtt")
@@ -239,7 +239,7 @@ rect(40, LY, W - 80, LH, "#f8fafc", "#e2e8f0", r=18)
 col1, col2, col3 = 64, 600, 1130
 t(col1, LY + 34, "Telemetry: from sensor to application", 15, 700, C["tel"])
 steps_t = [
-    ("1", "ESP32 publishes the measurement to Mosquitto (or sends it over HTTP)"),
+    ("1", "IoT device publishes a measurement to Mosquitto (or over HTTP)"),
     ("2", "Mosquitto delivers it to the IoT Agent (subscribed to /+/+/attrs)"),
     ("3", "IoT Agent updates the entity in Orion"),
     ("4", "Orion notifies STH-Comet (subscription)"),
@@ -255,8 +255,8 @@ t(col2, LY + 34, "Command: from application to actuator", 15, 700, C["cmd"])
 steps_c = [
     ("A", "Application sends the “on” command to Orion (PATCH)"),
     ("B", "Orion forwards it to the IoT Agent (registration)"),
-    ("C", "IoT Agent publishes /<apikey>/<device_id>/cmd; the ESP32 runs it"),
-    ("D", "ESP32 confirms on /cmdexe through path 1 → 2"),
+    ("C", "IoT Agent publishes /<apikey>/<device_id>/cmd; the device runs it"),
+    ("D", "IoT device confirms on /cmdexe through path 1 → 2"),
     ("E", "IoT Agent sets on_status = OK in Orion (path 3)"),
 ]
 for i, (n, s) in enumerate(steps_c):

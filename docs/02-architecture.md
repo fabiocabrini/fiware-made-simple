@@ -47,7 +47,7 @@ The path of a measurement, from the sensor to the chart:
 
 | Step | From → To | What happens |
 |---|---|---|
-| **1** | ESP32 → Mosquitto | The device publishes `42` on the `/TEF/lamp001/attrs/l` topic (or `s\|on\|l\|42` on `/TEF/lamp001/attrs`) |
+| **1** | IoT device → Mosquitto | The device publishes `42` on the `/TEF/lamp001/attrs/l` topic (or `s\|on\|l\|42` on `/TEF/lamp001/attrs`) |
 | **2** | Mosquitto → IoT Agent | The broker delivers the message to the IoT Agent, which subscribes to `/+/+/attrs` and `/+/+/attrs/+` |
 | **3** | IoT Agent → Orion | The IoT Agent identifies the device by `apikey` + `device_id`, converts the value to the declared type, and updates `luminosity` in the entity |
 | **4** | Orion → STH-Comet | The subscription triggers a notification to `http://sth-comet:8666/notify` |
@@ -64,8 +64,8 @@ The path of an action, from the application to the actuator:
 |---|---|---|
 | **A** | Application → Orion | `PATCH /v2/entities/urn:ngsi-ld:Lamp:001/attrs` with the `on` command |
 | **B** | Orion → IoT Agent | The *registration* created during provisioning makes Orion forward the command |
-| **C** | IoT Agent → Mosquitto → ESP32 | The IoT Agent publishes `lamp001@on\|` on `/TEF/lamp001/cmd`; the device turns the LED on |
-| **D** | ESP32 → Mosquitto → IoT Agent | The device confirms on `/TEF/lamp001/cmdexe` with `lamp001@on\|ok` |
+| **C** | IoT Agent → Mosquitto → IoT device | The IoT Agent publishes `lamp001@on\|` on `/TEF/lamp001/cmd`; the device turns the LED on |
+| **D** | IoT device → Mosquitto → IoT Agent | The device confirms on `/TEF/lamp001/cmdexe` with `lamp001@on\|ok` |
 | **E** | IoT Agent → Orion | `on_status` changes from `PENDING` to `OK`, and `on_info` receives the response |
 
 Without step D, the command reaches the device, but Orion never learns that it was executed, and `on_status` stays `PENDING` forever.

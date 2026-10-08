@@ -166,7 +166,7 @@
 <text x="64" y="1084" font-size="15" font-weight="700" fill="#0d9488" text-anchor="start">Telemetry: from sensor to application</text>
 <circle cx="76" cy="1109.5" r="12" fill="#0d9488" stroke="#ffffff" stroke-width="2.5"/>
 <text x="76" y="1114.0" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle">1</text>
-<text x="98" y="1114" font-size="13.5" font-weight="400" fill="#1f2937" text-anchor="start">ESP32 publishes the measurement to Mosquitto (or sends it over HTTP)</text>
+<text x="98" y="1114" font-size="13.5" font-weight="400" fill="#1f2937" text-anchor="start">IoT device publishes a measurement to Mosquitto (or over HTTP)</text>
 <circle cx="76" cy="1136.5" r="12" fill="#0d9488" stroke="#ffffff" stroke-width="2.5"/>
 <text x="76" y="1141.0" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle">2</text>
 <text x="98" y="1141" font-size="13.5" font-weight="400" fill="#1f2937" text-anchor="start">Mosquitto delivers it to the IoT Agent (subscribed to /+/+/attrs)</text>
@@ -191,10 +191,10 @@
 <text x="634" y="1141" font-size="13.5" font-weight="400" fill="#1f2937" text-anchor="start">Orion forwards it to the IoT Agent (registration)</text>
 <circle cx="612" cy="1163.5" r="12" fill="#ea580c" stroke="#ffffff" stroke-width="2.5"/>
 <text x="612" y="1168.0" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle">C</text>
-<text x="634" y="1168" font-size="13.5" font-weight="400" fill="#1f2937" text-anchor="start">IoT Agent publishes /&lt;apikey&gt;/&lt;device_id&gt;/cmd; the ESP32 runs it</text>
+<text x="634" y="1168" font-size="13.5" font-weight="400" fill="#1f2937" text-anchor="start">IoT Agent publishes /&lt;apikey&gt;/&lt;device_id&gt;/cmd; the device runs it</text>
 <circle cx="612" cy="1190.5" r="12" fill="#ea580c" stroke="#ffffff" stroke-width="2.5"/>
 <text x="612" y="1195.0" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle">D</text>
-<text x="634" y="1195" font-size="13.5" font-weight="400" fill="#1f2937" text-anchor="start">ESP32 confirms on /cmdexe through path 1 → 2</text>
+<text x="634" y="1195" font-size="13.5" font-weight="400" fill="#1f2937" text-anchor="start">IoT device confirms on /cmdexe through path 1 → 2</text>
 <circle cx="612" cy="1217.5" r="12" fill="#ea580c" stroke="#ffffff" stroke-width="2.5"/>
 <text x="612" y="1222.0" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle">E</text>
 <text x="634" y="1222" font-size="13.5" font-weight="400" fill="#1f2937" text-anchor="start">IoT Agent sets on_status = OK in Orion (path 3)</text>
