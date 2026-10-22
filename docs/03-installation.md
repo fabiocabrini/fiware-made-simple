@@ -11,7 +11,7 @@
 | Resource | Minimum | Recommended | Classroom or shared lab |
 |---|---|---|---|
 | Processor | 1 x86_64 core with **AVX** | 2 cores | 2 to 4 cores |
-| Memory (RAM) | 1 GB, with swap | 2 GB | 4 GB |
+| Memory (RAM) | 1 GB, [with swap](#machines-with-1-gb-of-memory) | 2 GB | 4 GB |
 | Free disk space | 5 GB | 20 GB | 40 GB or more, depending on the history |
 
 **Measured numbers** with the versions in this platform:
@@ -76,13 +76,14 @@ With the repository cloned ([Get and configure](#get-and-configure)), and whenev
 ./scripts/check-requirements.sh
 ```
 
-The script changes nothing. It checks the operating system, architecture, AVX, memory available to Docker, disk space, Docker and Compose versions, ports, and the `.env` file, and tells you what to fix:
+The script changes nothing. It checks the operating system, architecture, AVX, the Linux kernel against the MongoDB version, memory and swap available to Docker, disk space, Docker and Compose versions, ports, and the `.env` file, and tells you what to fix:
 
 ```
 System
   ✅ Linux: Ubuntu 26.04 LTS
   ✅ x86_64 architecture
   ✅ CPU with AVX instructions (required by MongoDB 5+)
+  ✅ Linux kernel 7.0.0-1014-aws (MongoDB 8.2)
   ...
 ✅ All set. Start the platform with:  docker compose up -d --wait
 ```
@@ -102,6 +103,8 @@ To use Docker without `sudo`, add your user to the `docker` group and **log out 
 ```bash
 sudo usermod -aG docker $USER
 ```
+
+The group only takes effect in a new session. Until then, `docker` commands fail with `permission denied` and `check-requirements.sh` reports it. Do not work around it with `sudo docker compose`: the scripts in `scripts/` run without `sudo`.
 
 Check the installation. The command is `docker compose`, with a space:
 
@@ -229,6 +232,9 @@ The versions live in `.env`. Before upgrading, read the release notes of each co
 docker compose pull && docker compose up -d --wait
 ```
 
+> [!NOTE]
+> **From 2.0.0 to 2.0.1:** `git pull` does not change your `.env`. Change `MONGO_VERSION=8.0` to `MONGO_VERSION=8.2` in it and run the command above. MongoDB 8.2 opens the 8.0 data as is, so no export is needed. This change is required on Linux kernel 6.19 or newer, such as Ubuntu 26.04, where MongoDB 8.0 does not start.
+
 > [!WARNING]
 > **Do not downgrade Orion from 4.x to 3.x** on the same volume: the internal format of subscriptions changed, and Orion 3.x logs errors when reading them.
 
@@ -238,7 +244,7 @@ The process is the same on a VM from any provider. Choose an **Ubuntu Server LTS
 
 | Provider | Instance | vCPU / memory |
 |---|---|---|
-| AWS | `t3.small` | 2 / 2 GiB |
+| AWS | `t3.small` (`t3.micro`, 1 GiB, only [with swap](#machines-with-1-gb-of-memory)) | 2 / 2 GiB |
 | Microsoft Azure | `B1ms` or `B2s` | 1 / 2 GiB or 2 / 4 GiB |
 | Google Cloud | `e2-small` or `e2-medium` | 2 shared / 2 or 4 GB |
 | Oracle Cloud | AMD or Intel shapes (`VM.Standard.E*`) with 2 GB or more | varies |
@@ -260,6 +266,20 @@ Install Docker and open only the ports you need in the **security group** (the p
 
 > [!WARNING]
 > Docker publishes ports directly in the system's network rules and **bypasses UFW**. A port published in `docker-compose.yml` stays reachable even if UFW blocks it. Control access through the cloud provider's firewall and read [Security](07-security.md).
+
+### Machines with 1 GB of memory
+
+Instances with 1 GB, such as the AWS free tier `t3.micro`, run the platform for one person testing a few devices, **but only with swap**. Without it, the two MongoDB instances compete for memory during startup, the health checks time out, and `docker compose up -d --wait` ends with `dependency failed to start`. Cloud images usually come without swap. Create a 2 GB swap file, which also survives reboots:
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+Check it with `free -h`: the `Swap` line must show about 2.0Gi. With 2 GB of memory or more, swap is optional.
 
 ---
 

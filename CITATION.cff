@@ -6,7 +6,7 @@ type: software
 authors:
   - family-names: Cabrini
     given-names: Fábio Henrique
-version: 2.0.0
+version: 2.0.1
 license: MIT
 repository-code: "https://github.com/fabiocabrini/fiware-made-simple"
 keywords:

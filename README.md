@@ -9,7 +9,7 @@ Orion Context Broker · IoT Agent UltraLight · STH-Comet · Mosquitto · MongoD
 [![Orion](https://img.shields.io/badge/Orion-4.5.0-2563eb)](https://fiware-orion.readthedocs.io/)
 [![IoT Agent UL](https://img.shields.io/badge/IoT_Agent_UL-3.7.0-2563eb)](https://fiware-iotagent-ul.readthedocs.io/)
 [![STH-Comet](https://img.shields.io/badge/STH--Comet-2.11.0-2563eb)](https://fiware-sth-comet.readthedocs.io/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-8.0-47a248)](https://www.mongodb.com/docs/manual/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-8.2-47a248)](https://www.mongodb.com/docs/manual/)
 [![Mosquitto](https://img.shields.io/badge/Mosquitto-2.0.22-3c5280)](https://mosquitto.org/)
 [![Docker Compose](https://img.shields.io/badge/Docker_Compose-v2-2496ed)](https://docs.docker.com/compose/)
 [![MIT License](https://img.shields.io/badge/license-MIT-6b7280)](LICENSE)

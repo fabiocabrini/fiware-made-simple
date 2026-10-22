@@ -113,7 +113,7 @@ add('</defs>')
 add(f'<rect width="{W}" height="{H}" fill="#ffffff"/>')
 
 t(40, 52, "FIWARE Made Simple", 30, 700)
-t(40, 80, "Platform architecture  ·  Orion 4.5  ·  IoT Agent UltraLight 3.7  ·  STH-Comet 2.11  ·  Mosquitto 2.0  ·  MongoDB 8.0",
+t(40, 80, "Platform architecture  ·  Orion 4.5  ·  IoT Agent UltraLight 3.7  ·  STH-Comet 2.11  ·  Mosquitto 2.0  ·  MongoDB 8.2",
   14.5, 400, C["muted"])
 
 # columns (center) and cards

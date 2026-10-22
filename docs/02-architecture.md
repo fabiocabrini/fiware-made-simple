@@ -36,8 +36,8 @@ The Application layer never talks to the devices directly: everything goes throu
 | `iot-agent` | `fiware/iotagent-ul:3.7.0` | Translates UltraLight 2.0 (MQTT or HTTP) into NGSI-v2 and forwards commands |
 | `sth-comet` | `telefonicaiot/fiware-sth-comet:2.11.0` | Receives notifications from Orion and stores the **history** |
 | `mosquitto` | `eclipse-mosquitto:2.0.22` | MQTT broker between the devices and the IoT Agent |
-| `mongo-db` | `mongo:8.0` | Database of Orion and the IoT Agent (context, subscriptions, devices) |
-| `mongo-db-sth` | `mongo:8.0` | Dedicated history database, with authentication |
+| `mongo-db` | `mongo:8.2` | Database of Orion and the IoT Agent (context, subscriptions, devices) |
+| `mongo-db-sth` | `mongo:8.2` | Dedicated history database, with authentication |
 
 Orion, the IoT Agent, and STH-Comet are FIWARE **Generic Enablers**. Mosquitto and MongoDB are complementary third-party components.
 

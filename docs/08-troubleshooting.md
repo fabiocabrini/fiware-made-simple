@@ -14,7 +14,7 @@ docker compose ps
 
 The first command checks the machine and Docker. The second shows which services are not `healthy`. The third shows where in the flow the failure happens.
 
-**Symptoms:** [Service is not healthy](#a-service-is-not-healthy) · [MongoDB restarts in a loop](#mongodb-restarts-in-a-loop-illegal-instruction) · [Port in use](#port-is-already-allocated) · [Docker permission denied](#permission-denied-when-using-docker) · [Subscription rejected](#subscription-rejected-invalid-attrsformat) · [Empty history](#the-history-stays-empty) · [Entity does not update](#the-entity-does-not-receive-measurements) · [409 when creating the service group](#409-conflict-when-creating-the-service-group) · [Data stopped after upgrading](#the-lamp-stopped-sending-data-after-the-upgrade) · [Command stuck in PENDING](#command-stays-pending) · [409 when provisioning the device](#409-conflict-when-provisioning-the-device) · [ESP32 does not connect](#the-esp32-does-not-connect-to-the-broker) · [MongoDB access denied](#authentication-failed-on-the-history-mongodb) · [Mac with Apple Silicon](#platform-warning-on-a-mac-with-apple-silicon)
+**Symptoms:** [Service is not healthy](#a-service-is-not-healthy) · [MongoDB restarts in a loop](#mongodb-restarts-in-a-loop-illegal-instruction) · [MongoDB and Linux kernel 6.19+](#mongodb-cannot-start-linux-kernel-619-and-newer) · [Health check timeout on 1 GB machines](#health-check-exceeded-timeout-on-a-1-gb-machine) · [Port in use](#port-is-already-allocated) · [Docker permission denied](#permission-denied-when-using-docker) · [Subscription rejected](#subscription-rejected-invalid-attrsformat) · [Empty history](#the-history-stays-empty) · [Entity does not update](#the-entity-does-not-receive-measurements) · [409 when creating the service group](#409-conflict-when-creating-the-service-group) · [Data stopped after upgrading](#the-lamp-stopped-sending-data-after-the-upgrade) · [Command stuck in PENDING](#command-stays-pending) · [409 when provisioning the device](#409-conflict-when-provisioning-the-device) · [ESP32 does not connect](#the-esp32-does-not-connect-to-the-broker) · [MongoDB access denied](#authentication-failed-on-the-history-mongodb) · [Mac with Apple Silicon](#platform-warning-on-a-mac-with-apple-silicon)
 
 ---
 
@@ -38,6 +38,27 @@ grep -o -m1 avx /proc/cpuinfo
 
 If there is no output, the processor or the VM does not expose AVX. On hypervisors such as Proxmox or VirtualBox, set the CPU type to `host`. On very old processors, there is no workaround with current MongoDB versions.
 
+### `MongoDB cannot start: Linux kernel 6.19 and newer`
+
+```
+"msg":"MongoDB cannot start: Linux kernel versions 6.19 and newer has a known incompatibility with this version of MongoDB. See https://jira.mongodb.org/browse/SERVER-121912"
+```
+
+`docker compose up -d --wait` ends with `dependency mongo-db failed to start`, and both MongoDB containers stay in `Restarting`. MongoDB 8.0 refuses to start on Linux kernel 6.19 or newer, which includes Ubuntu 26.04 (kernel 7.0). Check the kernel with `uname -r`. Use MongoDB 8.2, the default since version 2.0.1, in `.env`:
+
+```bash
+sed -i 's/^MONGO_VERSION=.*/MONGO_VERSION=8.2/' .env
+docker compose up -d --wait
+```
+
+MongoDB 8.2 opens the data written by 8.0, so the volumes are kept. If the containers were created before the change and the history database users do not exist (`Authentication failed` in the STH-Comet log), see [Authentication failed](#authentication-failed-on-the-history-mongodb).
+
+### `Health check exceeded timeout` on a 1 GB machine
+
+On machines with 1 GB of memory and no swap, such as the AWS `t3.micro`, the two MongoDB instances fill the memory during startup. `docker inspect fiware-mongo-db` shows `Health check exceeded timeout (5s)`, and `free -m` shows almost no free memory. Add swap as described in [Machines with 1 GB of memory](03-installation.md#machines-with-1-gb-of-memory), or use an instance with 2 GB.
+
+If the first start ran out of memory, the history database may have been created without its users, because they are created only on the first start. STH-Comet then restarts in a loop with `AuthenticationFailed`. On a new installation with no data yet, do a [full reset](03-installation.md#full-reset).
+
 ### `port is already allocated`
 
 Another program already uses the port, possibly another MongoDB or Mosquitto installed directly on the system. Find out which one:
@@ -56,7 +77,7 @@ Your user is not in the `docker` group:
 sudo usermod -aG docker $USER
 ```
 
-Then log out and back in.
+Then log out and back in: the group only applies to new sessions. Avoid `sudo docker compose` as a workaround: the scripts in `scripts/` run without `sudo` and report Docker as not responding.
 
 ### Subscription rejected: `invalid attrsFormat`
 

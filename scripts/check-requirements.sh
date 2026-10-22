@@ -48,6 +48,17 @@ elif [ "$OS" = Darwin ] && [ "$ARCH" = x86_64 ]; then
   else fail "CPU without AVX: MongoDB 5+ will not start"; fi
 fi
 
+mongo=$(grep -h '^MONGO_VERSION=' .env .env.example 2>/dev/null | head -1 | cut -d= -f2)
+if [ "$OS" = Linux ]; then
+  kernel=$(uname -r)
+  IFS=. read -r kmaj kmin _ <<< "${kernel%%-*}"
+  if [ "${kmaj:-0}" -gt 6 ] || { [ "${kmaj:-0}" -eq 6 ] && [ "${kmin:-0}" -ge 19 ]; }; then
+    if [[ $mongo == 8.0* ]]; then
+      fail "Linux kernel $kernel with MONGO_VERSION=$mongo: MongoDB 8.0 does not start on kernel 6.19 or newer. Set MONGO_VERSION=8.2 in .env"
+    else ok "Linux kernel $kernel (MongoDB $mongo)"; fi
+  else ok "Linux kernel $kernel"; fi
+fi
+
 cpus=$( (nproc || sysctl -n hw.ncpu) 2>/dev/null )
 if [ "${cpus:-0}" -ge 2 ]; then ok "$cpus CPU cores"; else warn "${cpus:-?} CPU core: it works, but 2 or more are recommended"; fi
 
@@ -58,20 +69,32 @@ elif [ "$free_gb" -ge 5 ]; then warn "$free_gb GB of free disk space: enough to 
 else fail "$free_gb GB of free disk space: at least 5 GB are required (images and data)"; fi
 
 echo "Docker"
+docker_ok=false
 if ! command -v docker >/dev/null 2>&1; then
   fail "Docker not found. See docs/03-installation.md#install-docker"
-elif ! docker info >/dev/null 2>&1; then
-  fail "Docker is installed but does not respond. Start the service (or Docker Desktop/Colima) and check your user permissions"
+elif ! docker_err=$(docker info 2>&1 >/dev/null); then
+  if [[ $docker_err == *"permission denied"* ]]; then
+    fail "Your user cannot use Docker yet. Run  sudo usermod -aG docker \$USER  then log out and back in (no sudo in the docker commands)"
+  else
+    fail "Docker is installed but does not respond. Start the service (or Docker Desktop/Colima)"
+  fi
 else
+  docker_ok=true
   ok "Docker Engine $(docker version --format '{{.Server.Version}}' 2>/dev/null)"
   compose=$(docker compose version --short 2>/dev/null)
   if [ -n "$compose" ]; then ok "Docker Compose $compose"
   else fail "Docker Compose v2 plugin missing (the command is 'docker compose', with a space)"; fi
 
   mem_mb=$(( $(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0) / 1024 / 1024 ))
+  # Linux only: on Docker Desktop and Colima the swap belongs to the Docker VM
+  swap_mb=-1
+  [ "$OS" = Linux ] && swap_mb=$(awk '/^SwapTotal:/ {print int($2/1024)}' /proc/meminfo)
   if [ "$mem_mb" -ge 1900 ]; then ok "$mem_mb MB of memory available to Docker"
-  elif [ "$mem_mb" -ge 950 ]; then warn "$mem_mb MB of memory for Docker: enough for a few devices; 2 GB or more are recommended"
-  else fail "$mem_mb MB of memory for Docker: at least 1 GB is required"; fi
+  elif [ "$mem_mb" -lt 850 ]; then fail "$mem_mb MB of memory for Docker: at least 1 GB is required"
+  elif [ "$swap_mb" -eq 0 ]; then
+    fail "$mem_mb MB of memory and no swap: MongoDB will not become healthy. Add swap (docs/03-installation.md#machines-with-1-gb-of-memory) or use 2 GB"
+  elif [ "$swap_mb" -gt 0 ]; then warn "$mem_mb MB of memory plus $swap_mb MB of swap: enough for a few devices; 2 GB or more are recommended"
+  else warn "$mem_mb MB of memory for Docker: enough for a few devices; 2 GB or more are recommended"; fi
 fi
 
 echo "Ports"
@@ -85,6 +108,7 @@ busy=""
 for p in $PORTS; do in_use "$p" && busy="$busy $p"; done
 if [ -z "$busy" ]; then ok "Free ports:$(printf ' %s' $PORTS)"
 elif [ "$platform" -gt 0 ]; then ok "Ports in use by the platform itself, which is already running:$busy"
+elif ! $docker_ok; then warn "Ports in use:$busy. Docker does not respond, so it is not possible to tell whether the platform itself holds them"
 else fail "Ports taken by another program:$busy. See docs/08-troubleshooting.md#port-is-already-allocated"; fi
 
 echo "Configuration"

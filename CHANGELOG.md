@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.1
+
+Fixes found while installing on an AWS EC2 `t3.micro` with Ubuntu Server 26.04.
+
+- **MongoDB 8.2:** MongoDB 8.0 refuses to start on Linux kernel 6.19 or newer, which includes Ubuntu 26.04 (kernel 7.0), with `MongoDB cannot start: Linux kernel versions 6.19 and newer` ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)). The default in `.env.example` is now 8.2, which opens the 8.0 data as is. **Existing installations:** `git pull` does not change `.env`; set `MONGO_VERSION=8.2` there.
+- **`check-requirements.sh`:**
+  - Checks the Linux kernel against `MONGO_VERSION`.
+  - Fails on machines with less than 2 GB of memory and no swap. Previously, 908 MB (a `t3.micro`) was rejected even with swap.
+  - Says when the user is not yet in the `docker` group, instead of a generic "does not respond".
+  - No longer blames "another program" for the ports when Docker does not respond and it cannot tell whether the platform itself holds them.
+- **Documentation:** swap setup for 1 GB machines such as the `t3.micro`, upgrade note from 2.0.0, and new troubleshooting entries for the kernel error and for health check timeouts.
+
 ## 2.0.0
 
 Complete review of the platform, the documentation, and the examples. All image versions were pinned and tested together, and the platform now has automated end-to-end tests. This is also the first release under the name FIWARE Made Simple.

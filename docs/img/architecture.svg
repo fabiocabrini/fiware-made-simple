@@ -9,7 +9,7 @@
 </defs>
 <rect width="1600" height="1290" fill="#ffffff"/>
 <text x="40" y="52" font-size="30" font-weight="700" fill="#1f2937" text-anchor="start">FIWARE Made Simple</text>
-<text x="40" y="80" font-size="14.5" font-weight="400" fill="#6b7280" text-anchor="start">Platform architecture  ·  Orion 4.5  ·  IoT Agent UltraLight 3.7  ·  STH-Comet 2.11  ·  Mosquitto 2.0  ·  MongoDB 8.0</text>
+<text x="40" y="80" font-size="14.5" font-weight="400" fill="#6b7280" text-anchor="start">Platform architecture  ·  Orion 4.5  ·  IoT Agent UltraLight 3.7  ·  STH-Comet 2.11  ·  Mosquitto 2.0  ·  MongoDB 8.2</text>
 <rect x="40" y="104" width="1520" height="196" rx="18" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1.2" />
 <rect x="100" y="160" width="300" height="116" rx="12" fill="#ffffff" stroke="#d1d5db" stroke-width="1.2" filter="url(#shadow)"/>
 <text x="122" y="192" font-size="18" font-weight="700" fill="#1f2937" text-anchor="start">Provisioning</text>
