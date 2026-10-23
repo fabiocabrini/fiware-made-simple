@@ -57,7 +57,7 @@ MongoDB 8.2 opens the data written by 8.0, so the volumes are kept. If the conta
 
 On machines with 1 GB of memory and no swap, such as the AWS `t3.micro`, the two MongoDB instances fill the memory during startup. `docker inspect fiware-mongo-db` shows `Health check exceeded timeout (5s)`, and `free -m` shows almost no free memory. Add swap as described in [Machines with 1 GB of memory](03-installation.md#machines-with-1-gb-of-memory), or use an instance with 2 GB.
 
-If the first start ran out of memory, the history database may have been created without its users, because they are created only on the first start. STH-Comet then restarts in a loop with `AuthenticationFailed`. On a new installation with no data yet, do a [full reset](03-installation.md#full-reset).
+If the first start ran out of memory, the history database may have been created without its users, because they are created only on the first start. STH-Comet then restarts in a loop with `AuthenticationFailed`. See [users missing](#the-history-database-users-are-missing) to create them without losing data.
 
 ### `port is already allocated`
 
@@ -147,6 +147,19 @@ The device (`DUPLICATE_DEVICE_ID`) already exists. List it with `GET /iot/device
 
 - Check the user, password, and `?authSource=admin` in the URI.
 - The users are created **only on the first start**. If you changed the passwords in `.env` after that, they do not apply. Change the password in the database itself, or do a [full reset](03-installation.md#full-reset).
+
+#### The history database users are missing
+
+STH-Comet restarts in a loop with `AuthenticationFailed`, and the `mongo-db-sth` log shows `Failed to authenticate` for the `sth` user. This happens when the first start was interrupted, for example by lack of memory, before the users were created. Create them with the administrator user, keeping the data:
+
+```bash
+docker compose exec mongo-db-sth sh -c 'mongosh --quiet -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin /docker-entrypoint-initdb.d/init-users.js'
+```
+```bash
+docker compose up -d --wait
+```
+
+`User "sth@admin" already exists` means the users were already there: the cause is a different password in `.env`, described above.
 
 ### Platform warning on a Mac with Apple Silicon
 

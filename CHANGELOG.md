@@ -10,7 +10,7 @@ Fixes found while installing on an AWS EC2 `t3.micro` with Ubuntu Server 26.04.
   - Fails on machines with less than 2 GB of memory and no swap. Previously, 908 MB (a `t3.micro`) was rejected even with swap.
   - Says when the user is not yet in the `docker` group, instead of a generic "does not respond".
   - No longer blames "another program" for the ports when Docker does not respond and it cannot tell whether the platform itself holds them.
-- **Documentation:** swap setup for 1 GB machines such as the `t3.micro`, upgrade note from 2.0.0, and new troubleshooting entries for the kernel error and for health check timeouts.
+- **Documentation:** swap setup for 1 GB machines such as the `t3.micro`, upgrade note from 2.0.0, and new troubleshooting entries for the kernel error, for health check timeouts, and for creating missing history database users without losing data.
 
 ## 2.0.0
 
