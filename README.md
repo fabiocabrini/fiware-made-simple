@@ -49,17 +49,30 @@ ARM processors on Linux, such as Raspberry Pi, AWS Graviton, and Oracle Ampere, 
 
 ## Quick start
 
-```bash
-git clone https://github.com/fabiocabrini/fiware-made-simple.git
-cd fiware-made-simple
-./scripts/check-requirements.sh   # checks the machine and fixes what it can, including Docker and .env
-# If the script added you to the docker group: exit, reconnect over SSH, and  cd fiware-made-simple
-docker compose up -d --wait       # waits until every service is healthy
-./scripts/smoke-test.sh           # optional: validates the platform end to end
-```
+1. Get the code and prepare the machine. The script checks everything and fixes what it can, including installing Docker and creating `.env`:
 
-> [!IMPORTANT]
-> **On a new Linux server, log out and back in after `check-requirements.sh`.** When the script installs Docker or adds your user to the `docker` group, the group only applies to new sessions: close the SSH connection with `exit`, connect again, and go back to the `fiware-made-simple` folder. Without this, `docker compose` fails with `permission denied`. Do not work around it with `sudo`. The script reminds you at the end with `👉 Log out and back in`.
+   ```bash
+   git clone https://github.com/fabiocabrini/fiware-made-simple.git
+   cd fiware-made-simple
+   ./scripts/check-requirements.sh
+   ```
+
+2. **If the script ends with `👉 Log out and back in`, close the SSH session and connect again.** It added your user to the `docker` group, which only applies to new sessions. Without this, `docker compose` fails with `permission denied`. Do not use `sudo` instead.
+
+   ```bash
+   exit
+   ```
+   ```bash
+   ssh user@server
+   cd fiware-made-simple
+   ```
+
+3. Start the platform, which waits until every service is healthy, and, optionally, validate it end to end:
+
+   ```bash
+   docker compose up -d --wait
+   ./scripts/smoke-test.sh
+   ```
 
 On a Mac with Apple Silicon, run `export DOCKER_DEFAULT_PLATFORM=linux/amd64` first.
 
