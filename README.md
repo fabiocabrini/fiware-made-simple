@@ -53,9 +53,13 @@ ARM processors on Linux, such as Raspberry Pi, AWS Graviton, and Oracle Ampere, 
 git clone https://github.com/fabiocabrini/fiware-made-simple.git
 cd fiware-made-simple
 ./scripts/check-requirements.sh   # checks the machine and fixes what it can, including Docker and .env
+# If the script added you to the docker group: exit, reconnect over SSH, and  cd fiware-made-simple
 docker compose up -d --wait       # waits until every service is healthy
 ./scripts/smoke-test.sh           # optional: validates the platform end to end
 ```
+
+> [!IMPORTANT]
+> **On a new Linux server, log out and back in after `check-requirements.sh`.** When the script installs Docker or adds your user to the `docker` group, the group only applies to new sessions: close the SSH connection with `exit`, connect again, and go back to the `fiware-made-simple` folder. Without this, `docker compose` fails with `permission denied`. Do not work around it with `sudo`. The script reminds you at the end with `👉 Log out and back in`.
 
 On a Mac with Apple Silicon, run `export DOCKER_DEFAULT_PLATFORM=linux/amd64` first.
 

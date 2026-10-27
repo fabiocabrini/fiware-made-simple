@@ -169,6 +169,9 @@ cd fiware-made-simple
 ./scripts/check-requirements.sh
 ```
 
+> [!IMPORTANT]
+> **If the script ends with `👉 Log out and back in`**, it installed Docker or added your user to the `docker` group, which only applies to new sessions. Close the SSH connection with `exit`, connect again, and go back to the folder with `cd fiware-made-simple` before [starting the platform](#start-the-platform). Do not use `sudo docker compose` instead.
+
 `check-requirements.sh` creates the `.env` file from `.env.example` when it does not exist (by hand: `cp .env.example .env`). The `.env` file holds the image versions, the history database credentials, and the log levels. It is **not versioned**: it is listed in `.gitignore`.
 
 | Variable | Purpose |
