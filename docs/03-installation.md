@@ -76,7 +76,26 @@ With the repository cloned ([Get and configure](#get-and-configure)), and whenev
 ./scripts/check-requirements.sh
 ```
 
-The script changes nothing. It checks the operating system, architecture, AVX, the Linux kernel against the MongoDB version, memory and swap available to Docker, disk space, Docker and Compose versions, ports, and the `.env` file, and tells you what to fix:
+The script checks the operating system, architecture, AVX, the Linux kernel against the MongoDB version, memory and swap available to Docker, disk space, Docker and Compose versions, ports, and the `.env` file, and **fixes what it can**, asking for your `sudo` password only for the steps that need it:
+
+| Problem | What the script does |
+|---|---|
+| `.env` missing | Creates it from `.env.example`, with the sample passwords ([change them later](07-security.md#change-the-passwords)) |
+| Variables missing from `.env`, for example after a `git pull` | Adds them with the values from `.env.example` |
+| `MONGO_VERSION=8.0` on Linux kernel 6.19 or newer | Changes it to `8.2` in `.env` |
+| Docker not installed (Linux) | Installs Docker Engine and Compose with the [official script](#linux-ubuntu-debian-and-derivatives) |
+| Docker service stopped (Linux) | Starts it and enables it on boot |
+| Compose v2 plugin missing (Linux with `apt`) | Installs `docker-compose-plugin`, or `docker-compose-v2` from Ubuntu |
+| User outside the `docker` group | Adds the user; then **log out and back in** |
+| Less than 2 GB of memory and no swap (Linux) | Creates a [2 GB swap file](#machines-with-1-gb-of-memory) |
+
+The architecture, AVX, disk space, and ports are only reported. On Windows and macOS, the script does not install Docker: follow [Install Docker](#install-docker). To only check, without changing anything:
+
+```bash
+./scripts/check-requirements.sh --check-only
+```
+
+Example on a machine that is ready:
 
 ```
 System
@@ -92,7 +111,7 @@ System
 
 ### Linux (Ubuntu, Debian, and derivatives)
 
-Use Docker's official script, which installs Docker Engine and the Compose v2 plugin:
+`check-requirements.sh` does these steps for you. To do them by hand, use Docker's official script, which installs Docker Engine and the Compose v2 plugin:
 
 ```bash
 curl -fsSL https://get.docker.com | sh
@@ -104,7 +123,7 @@ To use Docker without `sudo`, add your user to the `docker` group and **log out 
 sudo usermod -aG docker $USER
 ```
 
-The group only takes effect in a new session. Until then, `docker` commands fail with `permission denied` and `check-requirements.sh` reports it. Do not work around it with `sudo docker compose`: the scripts in `scripts/` run without `sudo`.
+The group only takes effect in a new session. Until then, `docker` commands fail with `permission denied`, even right after `check-requirements.sh` added you to the group. Do not work around it with `sudo docker compose`: the scripts in `scripts/` run without `sudo`.
 
 Check the installation. The command is `docker compose`, with a space:
 
@@ -147,10 +166,10 @@ export DOCKER_DEFAULT_PLATFORM=linux/amd64
 ```bash
 git clone https://github.com/fabiocabrini/fiware-made-simple.git
 cd fiware-made-simple
-cp .env.example .env
+./scripts/check-requirements.sh
 ```
 
-The `.env` file holds the image versions, the history database credentials, and the log levels. It is **not versioned**: it is listed in `.gitignore`.
+`check-requirements.sh` creates the `.env` file from `.env.example` when it does not exist (by hand: `cp .env.example .env`). The `.env` file holds the image versions, the history database credentials, and the log levels. It is **not versioned**: it is listed in `.gitignore`.
 
 | Variable | Purpose |
 |---|---|
@@ -163,7 +182,7 @@ The `.env` file holds the image versions, the history database credentials, and 
 | `*_LOG_LEVEL` | `DEBUG`, `INFO`, `WARN`, or `ERROR` |
 
 > [!IMPORTANT]
-> **Change the passwords before the first start.** The MongoDB users are created only when the database volume is created. To change a password later, see [Full reset](#full-reset).
+> **The sample passwords are fine for a lab, not for a server exposed on a network.** The MongoDB users are created only when the database volume is created, so changing a password is simplest before the first start. To change them at any time, see [Change the passwords](07-security.md#change-the-passwords).
 
 ## Start the platform
 
@@ -269,7 +288,7 @@ Install Docker and open only the ports you need in the **security group** (the p
 
 ### Machines with 1 GB of memory
 
-Instances with 1 GB, such as the AWS free tier `t3.micro`, run the platform for one person testing a few devices, **but only with swap**. Without it, the two MongoDB instances compete for memory during startup, the health checks time out, and `docker compose up -d --wait` ends with `dependency failed to start`. Cloud images usually come without swap. Create a 2 GB swap file, which also survives reboots:
+Instances with 1 GB, such as the AWS free tier `t3.micro`, run the platform for one person testing a few devices, **but only with swap**. Without it, the two MongoDB instances compete for memory during startup, the health checks time out, and `docker compose up -d --wait` ends with `dependency failed to start`. Cloud images usually come without swap. `check-requirements.sh` creates a 2 GB swap file in this case. To create it by hand, which also survives reboots:
 
 ```bash
 sudo fallocate -l 2G /swapfile

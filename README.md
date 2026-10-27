@@ -52,8 +52,7 @@ ARM processors on Linux, such as Raspberry Pi, AWS Graviton, and Oracle Ampere, 
 ```bash
 git clone https://github.com/fabiocabrini/fiware-made-simple.git
 cd fiware-made-simple
-./scripts/check-requirements.sh   # checks whether this machine is ready
-cp .env.example .env              # change the passwords before using it in the cloud
+./scripts/check-requirements.sh   # checks the machine and fixes what it can, including Docker and .env
 docker compose up -d --wait       # waits until every service is healthy
 ./scripts/smoke-test.sh           # optional: validates the platform end to end
 ```

@@ -146,7 +146,7 @@ The device (`DUPLICATE_DEVICE_ID`) already exists. List it with `GET /iot/device
 ### `Authentication failed` on the history MongoDB
 
 - Check the user, password, and `?authSource=admin` in the URI.
-- The users are created **only on the first start**. If you changed the passwords in `.env` after that, they do not apply. Change the password in the database itself, or do a [full reset](03-installation.md#full-reset).
+- The users are created **only on the first start**. If you changed the passwords in `.env` after that, they do not apply. Change them in the database itself as described in [Change the passwords](07-security.md#change-the-passwords), or do a [full reset](03-installation.md#full-reset).
 
 #### The history database users are missing
 

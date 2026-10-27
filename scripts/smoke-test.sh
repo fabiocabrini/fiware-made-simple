@@ -18,7 +18,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 if [ ! -f .env ]; then
-  echo ".env file not found. Create it with:  cp .env.example .env"
+  echo ".env file not found. Create it with:  ./scripts/check-requirements.sh"
   exit 1
 fi
 set -a; source .env; set +a

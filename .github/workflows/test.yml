@@ -15,9 +15,8 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Check requirements
-        run: |
-          cp .env.example .env
-          ./scripts/check-requirements.sh
+        # Also creates .env from .env.example
+        run: ./scripts/check-requirements.sh
 
       - name: Start the platform
         run: docker compose up -d --wait --wait-timeout 300

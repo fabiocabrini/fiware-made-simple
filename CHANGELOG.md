@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **`check-requirements.sh` fixes what it can**, asking for the `sudo` password only when needed. It creates `.env` from `.env.example` with the sample passwords, adds variables missing from `.env`, sets `MONGO_VERSION=8.2` on Linux kernel 6.19 or newer, and, on Linux, installs Docker Engine and Compose, starts the Docker service, adds the user to the `docker` group, and creates a 2 GB swap file on machines with less than 2 GB of memory. Use `--check-only` for the previous behavior, which changes nothing. The script refuses to run with `sudo`.
+- **Changing the passwords:** new step-by-step section in [Security](docs/07-security.md#change-the-passwords), before and after the first start, keeping the data.
+- **Quick start:** `cp .env.example .env` is no longer a separate step.
+
 ## 2.0.1
 
 Fixes found while installing on an AWS EC2 `t3.micro` with Ubuntu Server 26.04.
