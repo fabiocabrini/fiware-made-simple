@@ -87,7 +87,7 @@ The script checks the operating system, architecture, AVX, the Linux kernel agai
 | Docker service stopped (Linux) | Starts it and enables it on boot |
 | Compose v2 plugin missing (Linux with `apt`) | Installs `docker-compose-plugin`, or `docker-compose-v2` from Ubuntu |
 | User outside the `docker` group | Adds the user; then **log out and back in** |
-| Less than 2 GB of memory and no swap (Linux) | Creates a [2 GB swap file](#machines-with-1-gb-of-memory) |
+| Less than 2 GB of memory and less than 2 GB of swap (Linux) | Brings the swap to 2 GB: creates a [2 GB swap file](#machines-with-1-gb-of-memory), or, when there is already some swap, a file with the difference (`/swapfile`, or `/swapfile-fiware` if that one exists) |
 
 The architecture, AVX, disk space, and ports are only reported. On Windows and macOS, the script does not install Docker: follow [Install Docker](#install-docker). To only check, without changing anything:
 
@@ -288,7 +288,7 @@ Install Docker and open only the ports you need in the **security group** (the p
 
 ### Machines with 1 GB of memory
 
-Instances with 1 GB, such as the AWS free tier `t3.micro`, run the platform for one person testing a few devices, **but only with swap**. Without it, the two MongoDB instances compete for memory during startup, the health checks time out, and `docker compose up -d --wait` ends with `dependency failed to start`. Cloud images usually come without swap. `check-requirements.sh` creates a 2 GB swap file in this case. To create it by hand, which also survives reboots:
+Instances with 1 GB, such as the AWS free tier `t3.micro`, run the platform for one person testing a few devices, **but only with swap**. Without it, the two MongoDB instances compete for memory during startup, the health checks time out, and `docker compose up -d --wait` ends with `dependency failed to start`. Cloud images usually come without swap. `check-requirements.sh` creates a 2 GB swap file in this case, or completes the existing swap up to 2 GB. To create it by hand, which also survives reboots:
 
 ```bash
 sudo fallocate -l 2G /swapfile

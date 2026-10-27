@@ -10,8 +10,8 @@
 #     (to change them later, see docs/07-security.md#change-the-passwords)
 #   - adds variables missing from .env and sets MONGO_VERSION=8.2 on kernel 6.19+
 #   - on Linux: installs Docker Engine and Compose, starts the Docker service,
-#     adds your user to the docker group, and creates a 2 GB swap file on
-#     machines with less than 2 GB of memory
+#     adds your user to the docker group, and, on machines with less than
+#     2 GB of memory, brings the swap to 2 GB with a swap file
 # Architecture, AVX, disk space, and ports are only reported.
 
 set -uo pipefail
@@ -214,25 +214,32 @@ if command -v docker >/dev/null 2>&1; then
     swap_mb=-1
     [ "$OS" = Linux ] && swap_mb=$(awk '/^SwapTotal:/ {print int($2/1024)}' /proc/meminfo)
 
-    if [ "$mem_mb" -ge 850 ] && [ "$mem_mb" -lt 1900 ] && [ "$swap_mb" -eq 0 ] && $fix && $native_linux; then
-      root_free_gb=$(( $(df -Pk / | awk 'NR==2 {print $4}') / 1024 / 1024 ))
-      if [ -e /swapfile ]; then
-        fail "$mem_mb MB of memory and no swap, but /swapfile already exists and is not active. Check it with  sudo swapon /swapfile"
-      elif [ "$root_free_gb" -lt 7 ]; then
-        fail "$mem_mb MB of memory and no swap, and only $root_free_gb GB free on / for a 2 GB swap file plus the platform"
+    # Less than 2 GB of memory: bring the swap to 2 GB, adding a file for what is missing
+    # (a 2 GB swap file shows up as 2047 MB, hence the margin)
+    if [ "$mem_mb" -ge 850 ] && [ "$mem_mb" -lt 1900 ] && [ "$swap_mb" -ge 0 ] && [ "$swap_mb" -lt 1900 ] \
+       && $fix && $native_linux; then
+      add_mb=$((2048 - swap_mb))
+      swapfile=/swapfile; [ -e $swapfile ] && swapfile=/swapfile-fiware
+      root_free_mb=$(( $(df -Pk / | awk 'NR==2 {print $4}') / 1024 ))
+      if [ -e $swapfile ]; then
+        fail "$mem_mb MB of memory and $swap_mb MB of swap, but /swapfile and /swapfile-fiware already exist. Check them with  swapon --show"
+      elif [ "$root_free_mb" -lt $((add_mb + 5120)) ]; then
+        fail "$mem_mb MB of memory and $swap_mb MB of swap, and only $((root_free_mb / 1024)) GB free on / for $add_mb MB more of swap plus the platform"
       elif can_sudo; then
         if [ "$(stat -f -c %T / 2>/dev/null)" = btrfs ]; then
-          make_file() { run_logged $SUDO btrfs filesystem mkswapfile --size 2G /swapfile; }
+          make_file() { run_logged $SUDO btrfs filesystem mkswapfile --size "${add_mb}M" $swapfile; }
         else
           make_file() {
-            { run_logged $SUDO fallocate -l 2G /swapfile || run_logged $SUDO dd if=/dev/zero of=/swapfile bs=1M count=2048; } \
-              && run_logged $SUDO chmod 600 /swapfile && run_logged $SUDO mkswap /swapfile
+            { run_logged $SUDO fallocate -l "${add_mb}M" $swapfile || run_logged $SUDO dd if=/dev/zero of=$swapfile bs=1M count=$add_mb; } \
+              && run_logged $SUDO chmod 600 $swapfile && run_logged $SUDO mkswap $swapfile
           }
         fi
-        if make_file && run_logged $SUDO swapon /swapfile; then
-          grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' | $SUDO tee -a /etc/fstab >/dev/null
+        if make_file && run_logged $SUDO swapon $swapfile; then
+          grep -q "^$swapfile " /etc/fstab || echo "$swapfile none swap sw 0 0" | $SUDO tee -a /etc/fstab >/dev/null
+          old_swap_mb=$swap_mb
           swap_mb=$(awk '/^SwapTotal:/ {print int($2/1024)}' /proc/meminfo)
-          fixed "2 GB swap file created at /swapfile, also active after reboots"
+          if [ "$old_swap_mb" -eq 0 ]; then fixed "2 GB swap file created at $swapfile, also active after reboots"
+          else fixed "Swap increased from $old_swap_mb MB to $swap_mb MB with a $add_mb MB file at $swapfile, also active after reboots"; fi
         fi
       fi
     fi
