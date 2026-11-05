@@ -57,13 +57,20 @@ ARM processors on Linux, such as Raspberry Pi, AWS Graviton, and Oracle Ampere, 
    ./scripts/check-requirements.sh
    ```
 
-2. **If the script ends with `👉 Log out and back in`, close the SSH session and connect again.** It added your user to the `docker` group, which only applies to new sessions. Without this, `docker compose` fails with `permission denied`. Do not use `sudo` instead.
+2. **If the script ends with `👉 Log out and back in`, end the session and connect to the machine again.** It added your user to the `docker` group, which only applies to new sessions. Without this, `docker compose` fails with `permission denied`. Do not use `sudo` instead.
 
    ```bash
    exit
    ```
+
+   Then connect again the same way you did before:
+
+   - **Browser console** (such as EC2 Instance Connect in AWS): close the tab and click **Connect** on the instance again.
+   - **Your own terminal, over SSH:** run the same `ssh` command you used the first time.
+
+   Once you are back on the machine, return to the project folder:
+
    ```bash
-   ssh user@server
    cd fiware-made-simple
    ```
 
