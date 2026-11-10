@@ -4,7 +4,7 @@
 
 - **`check-requirements.sh` fixes what it can**, asking for the `sudo` password only when needed. It creates `.env` from `.env.example` with the sample passwords, adds variables missing from `.env`, sets `MONGO_VERSION=8.2` on Linux kernel 6.19 or newer, and, on Linux, installs Docker Engine and Compose, starts the Docker service, adds the user to the `docker` group, and, on machines with less than 2 GB of memory, brings the swap to 2 GB, creating a swap file or completing the existing swap. Use `--check-only` for the previous behavior, which changes nothing. The script refuses to run with `sudo`.
 - **Changing the passwords:** new step-by-step section in [Security](docs/07-security.md#change-the-passwords), before and after the first start, keeping the data.
-- **Quick start:** `cp .env.example .env` is no longer a separate step.
+- **Quick start:** `cp .env.example .env` is no longer a separate step. The quick start is now split into numbered steps, with logging out and back in after `check-requirements.sh` as a step of its own, and explains how to reconnect from a browser console, such as EC2 Instance Connect, or over SSH. The [installation guide](docs/03-installation.md) has the same reminder.
 
 ## 2.0.1
 
